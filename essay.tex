@@ -1,0 +1,76 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EDITORIAL SECTION
+%
+\documentclass{PSAIE}%
+\begin{document}%
+\PSAIEHeadFirst{10}{1}{1}{3}%
+%
+% END OF EDITORIAL SECTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Please give a short title for the running head
+\fancyhead[CO]{\PSAIEheader{Temporary title}} % TODO: Make actual title
+% Short list of authors for the running head
+\fancyhead[CE]{\PSAIEheader{L. Kov\'acs and A. Ag\'ardi}}
+\fancyfoot{}
+
+\noindent\PSAIEtitle{Temporary title} % TODO: Make actual title
+
+\noindent\PSAIEauthor{Bal\'azs Bolyki}
+{University of Miskolc, Hungary\\[0pt] Informatics Institute}
+{bolyki@iit.uni-miskolc.hu}
+
+\noindent\PSAIEauthor{L\'aszl\'o \'Arvai}
+{University of Miskolc, Hungary\\[0pt] Informatics Institute}
+{arvai.laszlo@iit.uni-miskolc.hu}
+
+\noindent\PSAIEauthor{Dr. Szilvia \'Arvai-Homolya}
+{University of Miskolc, Hungary\\[0pt] Mathematics Institute}
+{mathszil@uni-miskolc.hu}
+
+\noindent\PSAIEreceived{\today}
+
+\noindent\PSAIEabstract{This paper is a template for those authors
+    who wish to prepare their manuscript to be published in
+    \emph{Production Systems and Information Engineering} by using the
+    \emph{amsart} document class. You can reedit the text of this
+    paper and the corresponding \emph{bib} file in order to obtain
+    your manuscript.}
+
+\noindent\PSAIEkey{dataset, grapevine}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introductions}
+Robotization of grapevine pruning has been becoming an area of interest in agriculture recently
+\cite{botterill2017robot}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}. The reason
+comes down to the fact, that proper pruning requires expertise, and it is a time consuming activity,
+resulting in expensive human workforce. Also, tools for executing such a task are now available.
+
+One of the subtasks of grapevine pruning is reconstruction of the plant, based on images made by
+one or multiple cameras, mounted on the robot. After plant reconstruction, the system can make decisions
+as to where pruning has to be performed. Convolutional neural networks are available to do
+object detection and localization on images \cite{glenn_jocher_2021_5563715}, \cite{matterport_maskrcnn_2017},
+\cite{liu2016ssd}. However, such approaches require great amounts of training data. Creating a training
+dataset of sufficient size and quality is laborous, and topic specific datasets are usually not available.
+
+In this paper, we are focusing on generating and extending an existing, topic specific dataset, namely
+a bounding box based dataset created on grapevines. The existing dataset does not provide the information
+required for determining pruning points on the grapevine. Consequently, the training data needs to be
+extended. In later sections we propose a methodology for generating a new dataset algorithmically, based on
+the original dataset, using area specific knowledge on the grapevine, while requiring as little human
+intervention as possible.
+
+\section{Task description} \label{sec_task_description}
+
+\section*{Acknowledgements}
+\noindent
+The authors express their gratitude to the XXX Institute at YYY for
+their hospitality, etc.
+
+\bibliographystyle{PSAIEbib}
+\bibliography{citations}
+
+\end{document}
