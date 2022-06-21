@@ -44,12 +44,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introductions}
-Robotization of grapevine pruning has been becoming an area of interest in agriculture recently
-\cite{botterill2017robot}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}. The reason
-comes down to the fact, that proper pruning requires expertise, and it is a time consuming activity,
-resulting in expensive human workforce. Also, tools for executing such a task are now available.
+Robotization of grapevine pruning has become an area of interest in agriculture recently
+\cite{botterill2017robot}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}, since
+tools for executing such a task are now available. Proper pruning requires expertise, and it is
+a time consuming activity, resulting in expensive human workforce. Consequently, robotization is
+a viable and relevant alternative.
 
-One of the subtasks of grapevine pruning is reconstruction of the plant, based on images made by
+One of the subtasks of grapevine pruning is the reconstruction of the plant, based on images made by
 one or multiple cameras, mounted on the robot. After plant reconstruction, the system can make decisions
 as to where pruning has to be performed. Convolutional neural networks are available to do
 object detection and localization on images \cite{glenn_jocher_2021_5563715}, \cite{matterport_maskrcnn_2017},
@@ -61,9 +62,49 @@ a bounding box based dataset created on grapevines. The existing dataset does no
 required for determining pruning points on the grapevine. Consequently, the training data needs to be
 extended. In later sections we propose a methodology for generating a new dataset algorithmically, based on
 the original dataset, using area specific knowledge on the grapevine, while requiring as little human
-intervention as possible.
+intervention as possible. Later we demonstrate how well a neural network performs on purely machine
+generated data.
+
+\section{Survey} \label{sec_survey}
+Multiple papers address the issue of automated grapevine pruning. There are descriptions of complete,
+functioning robot systems \cite{botterill2017robot}, and subtask descriptions of smaller scope
+\cite{goesmannai}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}.
+
+When robotizing grapevine pruning, plant anatomy detection needs to be addressed. The thesis
+\cite{white_background_grape} uses a purely algorithmic approach, analysing the grapevine plant
+in front of a white background. However, taking images on grapevine plantation with white background
+is problematic -- the author of the thesis took the pictures indoor.
+
+In \cite{you2021semantics} robotic pruning of cherry trees is based on information retrieved by a
+semantic segmentation neural network, then converted to skeleton format. Other
+agricultural works use semantic or instance segmentation -- the paper \cite{chen2021semantic} uses semantic
+segmentation for detecting apple trees, while \cite{santos2020grape} uses instance segmentation to count
+grapes.
+
+Authors addressing pruning point determination work on data in graph format \cite{goesmannai}, which is best
+resembled by the skeleton format. Though skeleton format is desired for the output of the detector system,
+we found no papers describing such neural networks, which directly returns skeletons for grapevine.
+It is more viable to retrieve skeleton based on \cite{you2021semantics} semantic segmentation networks.
 
 \section{Task description} \label{sec_task_description}
+The paper describes a continuation of the thesis \cite{bolyki_2021}, where a bounding box based training
+dataset was created, and the YOLO neural network was trained \cite{glenn_jocher_2021_5563715}. As we have
+seen in the \ref{sec_survey}. section, bounding box is not the desired format for detecting pruning points.
+In this paper we make use of this original trained neural network to create a more desired format for
+representing grapevine detections.
+
+By extending the available dataset we mean multiple things.
+\begin{enumerate}
+    \item The available dataset could be extended in purely quantity. We have multiple grapevine images
+          available. By running the detection script of the YOLO neural network, we may attain great amounts of
+          new images. However, these almost always require manual correction.
+    \item We extend the dataset by adding a new class to the original four, which could be named \textit{cane}
+          or \textit{internodium} depending on the extension format. This requires algorithmical detection of
+          objects of the new class.
+    \item We extend the dataset by adding new logical formats, meaning we use the original bounding box
+          detections to create both skeleton and semantic segmentation datasets.
+\end{enumerate}
+
 
 \section*{Acknowledgements}
 \noindent
