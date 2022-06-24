@@ -4,17 +4,15 @@
 %
 \documentclass{PSAIE}%
 
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
 \sloppy
 \begin{document}%
-\PSAIEHeadFirst{10}{1}{1}{3}%
-%
-% END OF EDITORIAL SECTION
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\PSAIEHeadFirst{10}{1}{1}{3}
 
 % Please give a short title for the running head
 \fancyhead[CO]{\PSAIEheader{Temporary title}} % TODO: Make actual title
-% Short list of authors for the running head
 \fancyhead[CE]{\PSAIEheader{Bal\'azs Bolyki, L\'aszl\'o \'Arvai and Dr. Szilvia \'Arvai-Homolya}}
 \fancyfoot{}
 
@@ -42,8 +40,6 @@
       your manuscript.}
 
 \noindent\PSAIEkey{dataset, grapevine}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introductions}
 Robotization of grapevine pruning has become an area of interest in agriculture recently
@@ -206,9 +202,105 @@ The ranges specified for the young and the old parts are the following:
 \end{itemize}
 
 \subsection{Build cane} \label{sec_build_cane}
-In order to find connections between the nodes, we attempt to build canes on the image.
+In order to find connections between the nodes, we attempt to build canes on the image. To do this,
+we take the following steps:
+\begin{enumerate}
+      \item Sort nodes in top-down order. Start iteration from the upmost node.
+      \item If the next node is not yet connected to any other node, then name it $startNode$, and continue
+            with next step, otherwise repeat this step.
+      \item Find a $buildTries$ number of nodes that can be best connected to $startNode$ based on Algoritm
+            \ref{alg_trace_line}., which returns a probability. Name these $bestNodes$.
+      \item For each best points try to build a cane with Algorithm \ref{alg_build_cane}.
+            Accept and store the longest cane and discard the rest.
+      \item If all nodes that are not part of a cane were tried as $startNode$, then exit. Otherwise go to step
+            2.
+\end{enumerate}
 
-\subsection{Store connections} \label{sec_store_connections}
+Algorithm \ref{alg_trace_line}. returns an estimated probability to whether two nodes are connected or not.
+Algorithm \ref{alg_build_cane}. attempts to build a cane, and returns the cane when it is finished; if the
+algorithm cannot build a cane, then it returns the original two nodes, which were passed to it as arguments
+-- these compose the cane.
+
+The can\_wander\_to\_cane part of Algorithm \ref{alg_trace_line} is a utility function, which is given
+a $p$ point and a line. The function attempts to "wander off" the line, and takes a point $steps$ distance from the
+line in both positive and negative directions: $\vec{ps}^-$, $\vec{ps}^+$. If the line is slopy --
+$\vec{v} = \vec{p2} - \vec{p1}; \vec{v} = (vx, vy); |vx| \geq |vy|$ -- then we take the steps horizontally,
+$\vec{ps}^- \gets (vx - steps, vy), \vec{ps}^+ \gets (vx + steps, vy)$, otherwise we take them vertically
+$\vec{ps}^- \gets (vx, vy - steps), \vec{ps}^+ \gets (vx, vy + steps)$. The can\_wander\_to\_cane function
+returns true if either the pixel on $\vec{ps}^-$ or on $\vec{ps}^+$ has the color of the cane.
+
+\begin{algorithm}
+      \caption{Trace along line}
+      \label{alg_trace_line}
+      \begin{algorithmic}
+            \Function{traceAlongLine}{$\vec{p1}$, $\vec{p2}$, $plimit$}
+            \Comment Inputs are the endpoints of the line and a limit: $\vec{p1}$, $\vec{p2}$, $plimit$
+            \State $points \gets$ points along the line
+            \State $\vec{p}\gets \vec{p1}$
+            \State $len \gets$ length of line
+            \State $caneCount \gets 0$
+            \State $noncaneCount \gets 0$
+            \State $limit = len * plimit$; \Comment{meaning $plimit$ percent of line is allowed to be non-cane}
+            \While{$\vec{p} \neq vec{p2}$ \textbf{and} $noncane \leq limit$}
+            \If{$\vec{p}$ is potential cane by color \textbf{or} can\_wander\_to\_cane}
+            \State $cane = cane + 1$
+            \Else
+            \State $noncane = noncane + 1$
+            \EndIf
+            \State $\vec{p} \gets$ next point on line
+            \EndWhile
+            \State $prob = cane / len$
+            \State \textbf{return} $\gets prob$
+            \EndFunction
+      \end{algorithmic}
+\end{algorithm}
+
+The viability checks in Algorithm \ref{alg_build_cane}. are based on preconfigured values.
+
+\begin{itemize}
+      \item The angle of a node triplet is considered viable if the cosine of the angle is below $-0.8$,
+            which is a preconfigured angle cosine maximum.
+      \item The distance $\delta = d(lastNode, newNode)$ of two nodes is viable if the difference between
+            $\delta$ and $\delta' = d(prevNode, lastNode)$ is no greater then $\delta' * 0.7$, which is a
+            preconfigured length difference limit.
+      \item $traceAlongLine(lastNode, bestNextNode, plimit)$ is viable if it reaches a preconfigured
+            probability minimum, which we have set to 0.6.
+\end{itemize}
+
+\begin{algorithm}
+      \caption{Build cane}
+      \label{alg_build_cane}
+      \begin{algorithmic}
+            \Function{buildCane}{$n1$, $n2$} \Comment Inputs are the first two points of the cane
+            \State $plimit$ is preconfigured
+            \State $cane \gets n1, n2$, where $cane$ is a list of nodes
+            \State $prevNode \gets n1$
+            \State $lastNode \gets n2$
+            \State $couldGrow \gets true$
+            \While{$couldGrow$}
+            \State $nodes \gets$ nodes within a distance from $lastNode$.
+            \State $couldGrow \gets false$
+            \State $bestNextNode \gets NULL$
+            \For{$nextNode$ in $nodes$}
+            \If{$(prevNode, lastNode, nextNode)$ angle is viable\\
+                  \textbf{and} distance of $(lastNode, nextNode)$ is viable\\
+                  \textbf{and} $traceAlongLine(lastNode, bestNextNode, plimit)$ is viable}
+            \State $p = traceAlongLine(lastNode, bestNextNode, plimit)$
+            \State $p' = traceAlongLine(lastNode, nextNode, plimit)$
+            \State if $p < p'$ then $bestNextNode \gets nextNode$
+            \EndIf
+            \EndFor
+            \If{$bestNextNode != NULL$}
+            \State $couldGrow = true$
+            \State $cane \gets bestNextNode$ \Comment add new node to cane
+            \State $prevNode \gets lastNode$
+            \State $lastNode \gets bestNextNode$
+            \EndIf
+            \EndWhile
+            \State \textbf{return} $\gets cane$
+            \EndFunction
+      \end{algorithmic}
+\end{algorithm}
 
 \section*{Acknowledgements}
 \noindent
