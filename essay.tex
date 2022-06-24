@@ -302,10 +302,50 @@ The viability checks in Algorithm \ref{alg_build_cane}. are based on preconfigur
       \end{algorithmic}
 \end{algorithm}
 
-\section*{Acknowledgements}
-\noindent
-The authors express their gratitude to the XXX Institute at YYY for
-their hospitality, etc.
+\subsection{Conclusion} \label{sec_build_cane_conclusion}
+The result of the algorithm is an estimation of the canes. One estimation is represented in Figure
+\ref{fig_grapevine_connections}.
+
+\begin{figure}[h]
+      \centering
+      \includegraphics[scale=0.28]{images/grapevine_connections.png}
+      \caption{Grapevine connections}
+      \label{fig_grapevine_connections}
+\end{figure}
+
+The algorithm has two main deficiencies:
+\begin{enumerate}
+      \item When canes on the picture cross over each other, then it cannot reliably tell which cane is which, since
+            we do not have 3D data to support such decisions.
+      \item White background is required for the algorithm to work.
+\end{enumerate}
+
+We note that the above described algorithm starts from the top left node and goes left to right, top to bottom.
+This usually results that the canes are built from their end towards their beginning. This is due to one of the
+deficiencies of the algorithm: its inability to handle overlapping canes. On the top of the canes, there are
+less overlaps, and there are less first best connections to try; consequently, there are less attempts required to
+build a cane.
+
+We cannot use the output of this algorithm to make reliable pruning decisions, but we can use it to generate
+train data. The exporting of cane data is discussed in the next section.
+
+\section{Exporting data} \label{sec_exporting_data}
+Once we have retrieved cane information from the image, we can export it in other format, so we can use it for
+training neural networks. We implemented and tested three export formats:
+
+\begin{enumerate}
+      \item bounding box format,
+      \item segmentation format,
+      \item polyline format.
+\end{enumerate}
+
+\subsection{Bounding box format} \label{sec_export_bounding_box_format}
+To export canes as bounding boxes, we use the YOLO format. The advantage of this format is that it could be
+given to the YOLO neural network for training and validation.
+
+\subsection{Segmentation format} \label{sec_export_segmentation_format}
+
+\subsection{Polyline format} \label{sec_export_polyline_format}
 
 \bibliographystyle{PSAIEbib}
 \bibliography{citations}
