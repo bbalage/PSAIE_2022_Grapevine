@@ -46,7 +46,7 @@ Robotization of grapevine pruning has become an area of interest in agriculture 
 \cite{botterill2017robot}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}, since
 tools for executing such a task are now available. Proper pruning requires expertise, and it is
 a time consuming activity, resulting in expensive human workforce. Consequently, robotization is
-a viable and relevant alternative.
+a relevant alternative.
 
 The pruning of grapevine means the removal of young, wooden canes of the plant, during the dormant session,
 when the green parts are no longer present.
@@ -100,22 +100,22 @@ In this paper we describe a continuation of the thesis \cite{bolyki_2021}, where
 dataset was created, and the YOLO (You Only Look Once) neural network was trained
 \cite{glenn_jocher_2021_5563715}.
 A bounding box based dataset can be created relatively quickly, but it does not fit the task of pruning
-point detection well. However, results retrieved in bounding box format are reliable, and could be utilized
-to attain the desired information in favorable format, thereby also extending our dataset to contain the
-attained information.
+point detection well. However, results retrieved in bounding box format are reliable, and -- provided task
+specific information -- could be appropriately converted and used to attain more information, such as
+the relationships between the detected grapevine parts.
 
 We have access to a large set of images taken on a grapevine plantation, with the usage of a white screen
 for background, and we also have images without any white background at all. One of the images with
 white background is presented on Figure \ref{fig_grapevine_image}.
 We make use of the original \cite{bolyki_2021} trained neural network to create a more desired
-format for representing grapevine detections. The original format not only uses bounding boxes for
-representation, but only handles four different classes of grapevine parts:
+format for representing grapevine detections. The original format uses bounding boxes for
+representation, and detects four different classes of grapevine parts:
 \begin{enumerate}
       \item \textbf{trunk},
-      \item \textbf{cordon} -- the old, thich part of the grapevine, running on the trellis wires horizontally,
+      \item \textbf{cordon} -- the old, thick part of the grapevine, running on the trellis wires horizontally,
       \item \textbf{arm} -- old, usually vertical branches, providing a base for canes to grow,
-      \item \textbf{node} -- young proturbances on the canes organs supporting multiple buds
-            (grapevine buds are complex).
+      \item \textbf{node} -- young proturbances on the canes containing multiple buds from which new parts
+            can grow.
 \end{enumerate}
 
 \begin{figure}[h]
@@ -127,10 +127,12 @@ representation, but only handles four different classes of grapevine parts:
 
 Parts of the grapevine are represented on Figure \ref{fig_grapevine_structure}. It is best to further clarify
 the meaning of node, bud, cane, internodium. Canes are young -- one year old -- wooden branches of the
-grapevine, which consist of nodes -- spherical proturbances --, and internodiums -- straight woods connecting
-the nodes. Buds can yield shoots (canes before lignification -- turning to wood), leaves, tendrils, flowers,
-and they grow on nodes. To determine pruning points we need to know where are the canes, where are their nodes,
-where they start -- do they grow from arms, cordons or the trunk, and how many canes grows from a single arm.
+grapevine, which consist of nodes -- spherical proturbances --, and internodiums -- straight wooden organs
+connecting the nodes. Buds can yield shoots (canes before lignification -- turning to wood), leaves, tendrils,
+flowers, and they grow on nodes. To determine pruning points we need to know where the canes are, where their
+nodes are, where they start -- do they grow from arms, cordons or the trunk --, and how many canes grows from
+a single arm. We practically have to build a graph of nodes, internodiums, arms, cordons, etc. to represent
+their relationships.
 
 \begin{figure}[h]
       \centering
@@ -165,7 +167,7 @@ to retrieve the bounding boxes representing the trunks, cordons, arms and nodes 
 
 \begin{figure}[h]
       \centering
-      \includegraphics[scale=0.33]{images/grapevine_yolo.png}
+      \includegraphics[scale=0.28]{images/grapevine_yolo.png}
       \caption{Grapevine detections \cite{hellman2003grapevine}}
       \label{fig_grapevine_YOLO}
 \end{figure}
@@ -173,7 +175,7 @@ to retrieve the bounding boxes representing the trunks, cordons, arms and nodes 
 After the starting bounding box detections are retrieved, the steps of internodium detection are the following:
 
 \begin{enumerate}
-      \item Create color masks for the young parts of the grapevine -- internodiums, nodes.
+      \item Create color masks for the young parts of the grapevine: internodiums, nodes.
       \item Build the cane starting from a specific node.
       \item Store the connections between the nodes of the cane, thereby storing the internodiums.
 \end{enumerate}
@@ -191,8 +193,8 @@ vision algorithms. We use it for loading images, converting colors, executing mo
 To separate the younger and older parts of the image from the background, we first convert the images
 to HSV color space (Hue-Saturation-Value) from OpenCV's default (BGR -- Blue-Green-Red). Based on the
 HSV value of pixels we generate binary masks for both young and old parts of the cane, where the size
-of the mask matches the image, and each field of the mask is set to true (represented by the number 255,
-since OpenCV does not physically support true binary masks) if its color is within a specified range.
+of the mask matches the image, and each field of the mask is set to true -- represented by the number 255,
+since OpenCV does not support actual binary masks -- if its color is within a specified range.
 
 The ranges specified for the young and the old parts are the following:
 
@@ -210,7 +212,7 @@ we take the following steps:
             with next step, otherwise repeat this step.
       \item Find a $buildTries$ number of nodes that can be best connected to $startNode$ based on Algoritm
             \ref{alg_trace_line}., which returns a probability. Name these $bestNodes$.
-      \item For each best points try to build a cane with Algorithm \ref{alg_build_cane}.
+      \item For each best point try to build a cane with Algorithm \ref{alg_build_cane}.
             Accept and store the longest cane and discard the rest.
       \item If all nodes that are not part of a cane were tried as $startNode$, then exit. Otherwise go to step
             2.
@@ -223,8 +225,8 @@ algorithm cannot build a cane, then it returns the original two nodes, which wer
 
 The can\_wander\_to\_cane part of Algorithm \ref{alg_trace_line} is a utility function, which is given
 a $p$ point and a line. The function attempts to "wander off" the line, and takes a point $steps$ distance from the
-line in both positive and negative directions: $\vec{ps}^-$, $\vec{ps}^+$. If the line is slopy --
-$\vec{v} = \vec{p2} - \vec{p1}; \vec{v} = (vx, vy); |vx| \geq |vy|$ -- then we take the steps horizontally,
+line in both positive and negative directions: $\vec{ps}^-$, $\vec{ps}^+$. If the line is slopey --
+$\vec{v} = \vec{p2} - \vec{p1}; \vec{v} = (vx, vy); |vx| < |vy|$ -- then we take the steps horizontally,
 $\vec{ps}^- \gets (vx - steps, vy), \vec{ps}^+ \gets (vx + steps, vy)$, otherwise we take them vertically
 $\vec{ps}^- \gets (vx, vy - steps), \vec{ps}^+ \gets (vx, vy + steps)$. The can\_wander\_to\_cane function
 returns true if either the pixel on $\vec{ps}^-$ or on $\vec{ps}^+$ has the color of the cane.
@@ -240,7 +242,7 @@ returns true if either the pixel on $\vec{ps}^-$ or on $\vec{ps}^+$ has the colo
             \State $len \gets$ length of line
             \State $caneCount \gets 0$
             \State $noncaneCount \gets 0$
-            \State $limit = len * plimit$; \Comment{meaning $plimit$ percent of line is allowed to be non-cane}
+            \State $limit = len * plimit$; \Comment{$plimit$ percent of line is allowed to be non-cane}
             \While{$\vec{p} \neq vec{p2}$ \textbf{and} $noncane \leq limit$}
             \If{$\vec{p}$ is potential cane by color \textbf{or} can\_wander\_to\_cane}
             \State $cane = cane + 1$
@@ -331,21 +333,43 @@ train data. The exporting of cane data is discussed in the next section.
 
 \section{Exporting data} \label{sec_exporting_data}
 Once we have retrieved cane information from the image, we can export it in other format, so we can use it for
-training neural networks. We implemented and tested three export formats:
+training neural networks. We implemented and tested two export formats:
 
 \begin{enumerate}
       \item bounding box format,
-      \item segmentation format,
       \item polyline format.
 \end{enumerate}
 
 \subsection{Bounding box format} \label{sec_export_bounding_box_format}
-To export canes as bounding boxes, we use the YOLO format. The advantage of this format is that it could be
-given to the YOLO neural network for training and validation.
+To export canes as bounding boxes, we use the YOLO annotation format. The advantage of this format is that
+it could be given to the YOLO neural network for training and validation. The YOLO format takes image and
+text file pairs, where the image file is the annotated picture, and the text file contains the annotation.
+The annotation in the text file consists of one line per bounding box. One line in the text file looks like
+this:
 
-\subsection{Segmentation format} \label{sec_export_segmentation_format}
+\textit{class x y w h}
+
+Here, \textit{class} is an integer number representing the class of the detected object, \textit{x} and
+\textit{y} are floating point numbers in the range of 0-1 marking the \textit{center} coordinates of the
+bounding box, and \textit{w} and \textit{h} are also floating point numbers between 0 and 1 holding the
+value of the width and height of the bounding box.
+
+In Section \ref{sec_use_of_generated_data}. we show usage of generated YOLO data.
 
 \subsection{Polyline format} \label{sec_export_polyline_format}
+We can use polyline format for testing and further annotation. A cane of the grapevine cannot effectively
+be represented as a bounding box, but could be given as a polyline. In this case, we represent the cane
+as a sequence of point coordinates, where a point represents the center of a node, and each consecutive
+node has a connecting internodium between them.
+
+The export format of the polylines is the CVAT -- Computer Vision Annotation Tool -- output format for
+images \cite{boris_sekachev_2020_4009388}, which uses XML based annotation. We add a polyline annotation
+to an image by creating an XML tag for the polyline -- inside the image tag --, then list the coordinates
+as an attribute to the polyline. CVAT is a tool for annotating images, so we can further improve the
+annotation manually, then export it to a more commonly used format -- CVAT supports YOLO, Pascal VOC, COCO,
+TFRecord, and a lot of other formats.
+
+\section{Use of generated data} \label{sec_use_of_generated_data}
 
 \bibliographystyle{PSAIEbib}
 \bibliography{citations}
