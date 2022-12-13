@@ -12,11 +12,11 @@
 \PSAIEHeadFirst{10}{1}{1}{3}
 
 % Please give a short title for the running head
-\fancyhead[CO]{\PSAIEheader{Temporary title}} % TODO: Make actual title
+\fancyhead[CO]{\PSAIEheader{Algorithmic extension of grapevine dataset for neural networks}}
 \fancyhead[CE]{\PSAIEheader{Bal\'azs Bolyki, L\'aszl\'o \'Arvai and Dr. Szilvia \'Arvai-Homolya}}
 \fancyfoot{}
 
-\noindent\PSAIEtitle{Temporary title} % TODO: Make actual title
+\noindent\PSAIEtitle{Algorithmic extension of grapevine dataset for neural network}
 
 \noindent\PSAIEauthor{Bal\'azs Bolyki}
 {University of Miskolc, Hungary\\[0pt] Informatics Institute}
@@ -67,7 +67,7 @@ extending an existing, topic specific dataset, namely a bounding box based datas
 Second, we use the current
 bounding box data to retrieve more information on the grapevine structure, and convert the available
 information to a more favorable format. In later sections we propose a methodology for generating a
-new dataset algorithmically, based on the original dataset, using area specific knowledge on the
+new dataset algorithmicly, based on the original dataset, using area specific knowledge on the
 grapevine, while requiring as little human intervention as possible. We also demonstrate how well a
 neural network performs on purely machine generated data.
 
@@ -149,7 +149,7 @@ By extending the available dataset we mean multiple things.
             we attain great amounts of new training images. However, these almost always require
             manual correction.
       \item We extend the dataset by adding a new class to the original four, which could be named \textit{cane}
-            or \textit{internodium} depending on the extension format. This requires algorithmical detection of
+            or \textit{internodium} depending on the extension format. This requires algorithmic detection of
             objects of the new class.
       \item We extend the dataset by adding new logical formats, meaning we use the original bounding box
             detections to create both skeleton and semantic segmentation datasets.
@@ -341,9 +341,20 @@ training neural networks. We implemented and tested two export formats:
 \end{enumerate}
 
 \subsection{Bounding box format} \label{sec_export_bounding_box_format}
-To export canes as bounding boxes, we use the YOLO annotation format. The advantage of this format is that
-it could be given to the YOLO neural network for training and validation. The YOLO format takes image and
-text file pairs, where the image file is the annotated picture, and the text file contains the annotation.
+To export canes as bounding boxes, we need to break the cane down into nodes and internodiums. Such a
+breakdown is shown in Figure \ref{fig_internodium_boxes}.
+
+\begin{figure}[h]
+      \centering
+      \includegraphics[scale=0.28]{images/internodium_boxes.png}
+      \caption{Canes as nodes and internodiums}
+      \label{fig_internodium_boxes}
+\end{figure}
+
+To store
+bounding boxes for nodes and internodiums we use the YOLO annotation format. The advantage of this format
+is that it could be given to the YOLO neural network for training and validation. The YOLO format takes image
+and text file pairs, where the image file is the annotated picture, and the text file contains the annotation.
 The annotation in the text file consists of one line per bounding box. One line in the text file looks like
 this:
 
@@ -354,11 +365,15 @@ Here, \textit{class} is an integer number representing the class of the detected
 bounding box, and \textit{w} and \textit{h} are also floating point numbers between 0 and 1 holding the
 value of the width and height of the bounding box.
 
+We should note that the YOLO format cannot store connection data directly; we can only assume the existence
+of connections based on the positions of bounding boxes. Consequently, data loss would possibly occur
+when using stored data.
+
 In Section \ref{sec_use_of_generated_data}. we show usage of generated YOLO data.
 
 \subsection{Polyline format} \label{sec_export_polyline_format}
 We can use polyline format for testing and further annotation. A cane of the grapevine cannot effectively
-be represented as a bounding box, but could be given as a polyline. In this case, we represent the cane
+be represented as a single bounding box, but could be given as a polyline. In this case, we represent the cane
 as a sequence of point coordinates, where a point represents the center of a node, and each consecutive
 node has a connecting internodium between them.
 
@@ -369,7 +384,58 @@ as an attribute to the polyline. CVAT is a tool for annotating images, so we can
 annotation manually, then export it to a more commonly used format -- CVAT supports YOLO, Pascal VOC, COCO,
 TFRecord, and a lot of other formats.
 
+The advantage of this format is that the connection data is stored directly -- no loss occurs this way.
+The disadvantage is that we have no knowledge of a polyline detection neural network that could make use of
+this data.
+
 \section{Use of generated data} \label{sec_use_of_generated_data}
+We used the generated bounding box data -- described in Section \ref{sec_export_bounding_box_format}. --
+to train a new YOLO neural network. This neural network was able to detect internodiums as well as the
+previously annotated nodes, arms, cordons and trunks. An example run of the newly trained neural network
+is shown in Figure \ref{fig_generated_data_train}. The given output was achieved with purely generated
+data.
+
+\begin{figure}[h]
+      \centering
+      \includegraphics[scale=0.23]{images/generated_train_data.png}
+      \caption{Neural network trained on generated data}
+      \label{fig_generated_data_train}
+\end{figure}
+
+The disadvantage of using purely generated data is the unreliability of accuracy measurements; since the
+validation data is also generated, Mean Average Precision, Precision, Recall have little meaning. In order
+to reliably use and test such a neural network, manual correction are necessary. However, the amount of time
+required for manual corrections is greatly reduced by generating a base annotation; hundreds of annotations
+like the one visible on Figure \ref{fig_generated_data_train}. can now be generated in the matter of seconds,
+greatly extending the available dataset.
+
+Another advantage of extending the dataset with internodiums is that the reconstruction of canes
+would no longer have to rely on the white background. For example, the output visible on Figure
+\ref{fig_internodium_connections}. was generated without reliance on white background. The algorithm
+connected all nodes which were connected by an internodium box -- where \textit{connected} means that the
+internodium box had two diagonally opposite corners inside two different node boxes.
+
+\begin{figure}[h]
+      \centering
+      \includegraphics[scale=0.23]{images/internodium_connections.png}
+      \caption{Cane reconstruction based on internodium boxes}
+      \label{fig_internodium_connections}
+\end{figure}
+
+The reliability of the algorithm is now dependent on the accuracy of the YOLO neural network -- which in
+turn is dependent on the size and versatility of the dataset.
+
+\section{Conclusion} \label{sec_conclusion}
+In this paper, we showed a methodology to extend a currently available dataset to contain more images and
+more classes of objects. Namely, the bounding box based dataset on grapevine images formerly contained
+four classes of objects -- nodes, arms, cordons and trunks --, and now the class of internodium is
+algorithmicly added to them. In case we export the dataset not as bounding boxes, but as polylines,
+the detected canes can be accurately represented.
+
+We used the algorithical extension of the dataset to teach a new neural network, which can now detect
+internodiums too. Internodium detection can relieve us from the currently necessary white background,
+making the photographing and reconstruction of grapevines much less demanding. Algorithmic dataset
+extension reduces the human working hours required to create a large dataset.
 
 \bibliographystyle{PSAIEbib}
 \bibliography{citations}
