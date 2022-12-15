@@ -32,12 +32,12 @@
 
 \noindent\PSAIEreceived{\today}
 
-\noindent\PSAIEabstract{This paper is a template for those authors
-      who wish to prepare their manuscript to be published in
-      \emph{Production Systems and Information Engineering} by using the
-      \emph{amsart} document class. You can reedit the text of this
-      paper and the corresponding \emph{bib} file in order to obtain
-      your manuscript.}
+\noindent\PSAIEabstract{In this paper we describe a methodology to extend and use a dataset on grapevine
+      part locations. From the four object classes, which had been previously marked on multiple images,
+      we generate a new, extended dataset containing more images and an additional class of object.
+      We use the newly generated dataset to train the YOLO neural network, and test the new network
+      on the images. In the process of extension, we use a cane building algorithm, which was developed to
+      help reconstruct the grapevine for proper pruning point detection.}
 
 \noindent\PSAIEkey{dataset, grapevine}
 
@@ -48,40 +48,41 @@ tools for executing such a task are now available. Proper pruning requires exper
 a time consuming activity, resulting in expensive human workforce. Consequently, robotization is
 a relevant alternative.
 
-The pruning of grapevine means the removal of young, wooden canes of the plant, during the dormant session,
-when the green parts are no longer present.
+The pruning of grapevine means the removal of the young, wooden canes during the dormant session
+-- when the green parts are no longer present.
 One of the subtasks of grapevine pruning is the reconstruction of the plant, based on images made by
 one or multiple cameras, mounted on the robot. After plant reconstruction, the system can make decisions
-as to where pruning has to be performed. Convolutional neural networks are available to do
+about where pruning has to be performed. Convolutional neural networks are available to do
 object detection and localization on images \cite{glenn_jocher_2021_5563715}, \cite{matterport_maskrcnn_2017},
 \cite{liu2016ssd}. However, such approaches require great amounts of training data. Creating a training
 dataset of sufficient size and quality is laborous, and topic specific datasets are usually not available.
-Also, existing neural networks do not provide their output in a proper format; at the time of writing,
+Also, existing neural networks do not provide their output in proper format; at the time of writing,
 there is no neural network with an output format, which could be directly utilized for pruning point
 detection.
 
 The desired output format of the plant reconstruction is a semantic graph, where graph nodes are parts
 of the grapevine, and graph edges are connections between the parts. We aim to extend our existing
-dataset towards such a graph format. In this paper, we achieve two goals. First, generating and
+dataset towards such a graph format; we start from a purely bounding box based dataset, and algorithmically
+gather information about connections and new parts. In this paper, we achieve two goals. First, generating and
 extending an existing, topic specific dataset, namely a bounding box based dataset created on grapevines.
 Second, we use the current
 bounding box data to retrieve more information on the grapevine structure, and convert the available
 information to a more favorable format. In later sections we propose a methodology for generating a
-new dataset algorithmicly, based on the original dataset, using area specific knowledge on the
-grapevine, while requiring as little human intervention as possible. We also demonstrate how well a
+new dataset algorithmically, based on the original dataset -- using anatomical knowledge of the
+grapevine --, while requiring as little human intervention as possible. We also demonstrate how well a
 neural network performs on purely machine generated data.
 
 \section{Survey} \label{sec_survey}
 Multiple papers address the issue of automated grapevine pruning. There are descriptions of complete,
 functioning robot systems \cite{botterill2017robot}, and subtask descriptions of smaller scope
-\cite{goesmannai}, \cite{fernandes2021grapevine}, \cite{katyara2020reproducible}.
+\cite{fernandes2021grapevine}, \cite{katyara2020reproducible}, \cite{goesmannai}.
 
 When robotizing grapevine pruning, plant anatomy detection needs to be addressed. The thesis
 \cite{white_background_grape} uses a purely algorithmic approach, analysing the grapevine plant
 in front of a white background. However, taking images on grapevine plantation with white background
 is problematic -- the author of the thesis took the pictures indoor. Background removal could also be
-done by using the robot itself to block vision. In \cite{botterill2017robot} the background is not
-visible, because the robot moves over the row grapevines and covers the plants in its U shaped form;
+done by using the robot itself to block vision: in \cite{botterill2017robot} the background is not
+visible, because the robot moves over the of row grapevines and covers the plants in its U-shaped form;
 however, such a construct is very large and hard to transport.
 
 In \cite{you2021semantics} robotic pruning of cherry trees is based on information retrieved by a
@@ -92,7 +93,7 @@ grapes.
 
 Authors addressing pruning point determination work on data in graph format \cite{goesmannai}, which is best
 resembled by the skeleton format. Though skeleton format is desired for the output of the detector system,
-we found no papers describing such neural networks, which directly returns skeletons for grapevine.
+we found no papers describing neural networks, which directly return skeletons for grapevine.
 It is more viable to retrieve skeleton data, based on \cite{you2021semantics} semantic segmentation networks.
 
 \section{Task description} \label{sec_task_description}
@@ -105,8 +106,8 @@ specific information -- could be appropriately converted and used to attain more
 the relationships between the detected grapevine parts.
 
 We have access to a large set of images taken on a grapevine plantation, with the usage of a white screen
-for background, and we also have images without any white background at all. One of the images with
-white background is presented on Figure \ref{fig_grapevine_image}.
+for background, and we also have images without white background. One of the images with white background is
+presented on Figure \ref{fig_grapevine_image}.
 We make use of the original \cite{bolyki_2021} trained neural network to create a more desired
 format for representing grapevine detections. The original format uses bounding boxes for
 representation, and detects four different classes of grapevine parts:
@@ -114,8 +115,7 @@ representation, and detects four different classes of grapevine parts:
       \item \textbf{trunk},
       \item \textbf{cordon} -- the old, thick part of the grapevine, running on the trellis wires horizontally,
       \item \textbf{arm} -- old, usually vertical branches, providing a base for canes to grow,
-      \item \textbf{node} -- young proturbances on the canes containing multiple buds from which new parts
-            can grow.
+      \item \textbf{node} -- young proturbances on the canes containing multiple buds.
 \end{enumerate}
 
 \begin{figure}[h]
@@ -149,21 +149,26 @@ By extending the available dataset we mean multiple things.
             we attain great amounts of new training images. However, these almost always require
             manual correction.
       \item We extend the dataset by adding a new class to the original four, which could be named \textit{cane}
-            or \textit{internodium} depending on the extension format. This requires algorithmic detection of
-            objects of the new class.
+            or \textit{internodium} depending on the annotation format (described in Section
+            \ref{sec_exporting_data}). This requires algorithmic detection of objects of the new class.
       \item We extend the dataset by adding new logical formats, meaning we use the original bounding box
-            detections to create both skeleton and semantic segmentation datasets.
+            detections to create a skeleton dataset for the canes.
 \end{enumerate}
 
+
 \section{Internodium detection} \label{sec_internodium_detection}
+In order to extend the dataset with an internodium class, internodium objects must be algorithmically
+detected. We should note that our algorithm also stores cane data, meaning the connections between the
+internodiums and the nodes; this way detecting internodiums also means detecting canes.
+
 Internodium detection is performed on pictures taken on grapevine plantations. On these images, white
 background was used -- allowing us more operations on the grapevine, such as segmentation, background
-switching and building of canes or detecting internodiums.
+switching and building of canes.
 
-Detection of internodiums is performed by building canes, based on the nodes found by the pretrained YOLO
-neural network \cite{bolyki_2021}, \cite{glenn_jocher_2021_5563715}. The pretrained YOLO network is used
-to retrieve the bounding boxes representing the trunks, cordons, arms and nodes on the image. Figure
-\ref{fig_grapevine_YOLO}. represents one of the outputs of the YOLO network.
+Detection of internodiums is performed by building canes. Cane building is based on the nodes found by the
+pretrained YOLO neural network \cite{bolyki_2021}, \cite{glenn_jocher_2021_5563715}. The pretrained YOLO
+network is used to retrieve the bounding boxes representing the trunks, cordons, arms and nodes on the image.
+Figure \ref{fig_grapevine_YOLO}. represents one of the outputs of the YOLO network.
 
 \begin{figure}[h]
       \centering
@@ -175,9 +180,9 @@ to retrieve the bounding boxes representing the trunks, cordons, arms and nodes 
 After the starting bounding box detections are retrieved, the steps of internodium detection are the following:
 
 \begin{enumerate}
-      \item Create color masks for the young parts of the grapevine: internodiums, nodes.
-      \item Build the cane starting from a specific node.
-      \item Store the connections between the nodes of the cane, thereby storing the internodiums.
+      \item Create color masks.
+      \item Build canes.
+      \item Store the connections between the nodes of the cane as internodiums.
 \end{enumerate}
 
 In this section we describe these steps in more detail.
@@ -203,19 +208,19 @@ The ranges specified for the young and the old parts are the following:
       \item \textbf{Old part (arm, cordon, trunk)}: $hs > 10 \wedge hv <= 70$
 \end{itemize}
 
-\subsection{Build cane} \label{sec_build_cane}
+\subsection{Build canes} \label{sec_build_canes}
 In order to find connections between the nodes, we attempt to build canes on the image. To do this,
 we take the following steps:
 \begin{enumerate}
       \item Sort nodes in top-down order. Start iteration from the upmost node.
       \item If the next node is not yet connected to any other node, then name it $startNode$, and continue
-            with next step, otherwise repeat this step.
+            with next step, otherwise repeat this step on the next upmost node.
       \item Find a $buildTries$ number of nodes that can be best connected to $startNode$ based on Algoritm
             \ref{alg_trace_line}., which returns a probability. Name these $bestNodes$.
       \item For each best point try to build a cane with Algorithm \ref{alg_build_cane}.
             Accept and store the longest cane and discard the rest.
       \item If all nodes that are not part of a cane were tried as $startNode$, then exit. Otherwise go to step
-            2.
+            2, and continue with the next upmost node.
 \end{enumerate}
 
 Algorithm \ref{alg_trace_line}. returns an estimated probability to whether two nodes are connected or not.
@@ -225,11 +230,13 @@ algorithm cannot build a cane, then it returns the original two nodes, which wer
 
 The can\_wander\_to\_cane part of Algorithm \ref{alg_trace_line} is a utility function, which is given
 a $p$ point and a line. The function attempts to "wander off" the line, and takes a point $steps$ distance from the
-line in both positive and negative directions: $\vec{ps}^-$, $\vec{ps}^+$. If the line is slopey --
-$\vec{v} = \vec{p2} - \vec{p1}; \vec{v} = (vx, vy); |vx| < |vy|$ -- then we take the steps horizontally,
-$\vec{ps}^- \gets (vx - steps, vy), \vec{ps}^+ \gets (vx + steps, vy)$, otherwise we take them vertically
-$\vec{ps}^- \gets (vx, vy - steps), \vec{ps}^+ \gets (vx, vy + steps)$. The can\_wander\_to\_cane function
-returns true if either the pixel on $\vec{ps}^-$ or on $\vec{ps}^+$ has the color of the cane.
+line in both positive and negative directions: $\vec{ps}^-$, $\vec{ps}^+$. If the line is slopey, meaning
+$\vec{v} = \vec{p2} - \vec{p1}; \vec{v} = (vx, vy); |vx| < |vy|$, then we take the steps horizontally:
+\[\vec{ps}^- \gets (vx - steps, vy), \vec{ps}^+ \gets (vx + steps, vy)\]
+Otherwise we take steps vertically
+\[\vec{ps}^- \gets (vx, vy - steps), \vec{ps}^+ \gets (vx, vy + steps)\]
+The can\_wander\_to\_cane function returns true if either the pixel on $\vec{ps}^-$ or on $\vec{ps}^+$ has the color
+of the cane.
 
 \begin{algorithm}
       \caption{Trace along line}
@@ -263,10 +270,11 @@ The viability checks in Algorithm \ref{alg_build_cane}. are based on preconfigur
       \item The angle of a node triplet is considered viable if the cosine of the angle is below $-0.8$,
             which is a preconfigured angle cosine maximum.
       \item The distance $\delta = d(lastNode, newNode)$ of two nodes is viable if the difference between
-            $\delta$ and $\delta' = d(prevNode, lastNode)$ is no greater then $\delta' * 0.7$, which is a
-            preconfigured length difference limit.
+            $\delta$ and $\delta' = d(prevNode, lastNode)$ is no greater then $\delta' * 0.7$, where $0.7$
+            is a preconfigured length difference limit.
       \item $traceAlongLine(lastNode, bestNextNode, plimit)$ is viable if it reaches a preconfigured
             probability minimum, which we have set to 0.6.
+      \item For the test runs, the $buildTries$ variable was set to $3$.
 \end{itemize}
 
 \begin{algorithm}
@@ -304,7 +312,27 @@ The viability checks in Algorithm \ref{alg_build_cane}. are based on preconfigur
       \end{algorithmic}
 \end{algorithm}
 
-\subsection{Conclusion} \label{sec_build_cane_conclusion}
+\subsection{Store internodiums} \label{sec_store_internodiums}
+Internodiums are stored as connections between nodes. This is a good storage option for a program as long as
+no additional operations are required. However, in order to export the data as bounding boxes, boxes for the
+internodiums were needed to be set too.
+
+Let $\vec{c}$ denote the center of the internodium's bounding box, $w$ its width and $h$ its height.
+Also, let $\vec{c_1}, \vec{c_2}$ be the centers of the nodes, which are connected by the internodium, while
+$w_1, w_2, h_1, h_2$ be there widths and heights respectively. The bounding box of the internodium is calculated
+as follows:
+
+\begin{align*}
+      \vec{c} & = \vec{c1} + ((\vec{c2} - \vec{c1}) / 2) \\
+      w       & = max(abs(c_2x - c_1x), w_1, w_2)        \\
+      h       & = max(abs(c_2y - c_1y), h_1, h_2)
+\end{align*}
+
+Meaning, the center of the internodium box is at the half of the line between the nodes, and its width and height
+are set to at least be the size of the bigger node, but larger if the internodium is diagonal. This method always
+ensures that the internodium box touches the node boxes, mostly with its diagonally opposite corners.
+
+\subsection{Conclusion} \label{sec_build_canes_conclusion}
 The result of the algorithm is an estimation of the canes. One estimation is represented in Figure
 \ref{fig_grapevine_connections}.
 
@@ -332,7 +360,7 @@ We cannot use the output of this algorithm to make reliable pruning decisions, b
 train data. The exporting of cane data is discussed in the next section.
 
 \section{Exporting data} \label{sec_exporting_data}
-Once we have retrieved cane information from the image, we can export it in other format, so we can use it for
+Once we have retrieved cane information from the image, we export it in other formats, so we can use it to
 training neural networks. We implemented and tested two export formats:
 
 \begin{enumerate}
@@ -351,7 +379,7 @@ breakdown is shown in Figure \ref{fig_internodium_boxes}.
       \label{fig_internodium_boxes}
 \end{figure}
 
-To store
+The creation of internodium boxes is discussed in Section \ref{sec_internodium_detection}. To store
 bounding boxes for nodes and internodiums we use the YOLO annotation format. The advantage of this format
 is that it could be given to the YOLO neural network for training and validation. The YOLO format takes image
 and text file pairs, where the image file is the annotated picture, and the text file contains the annotation.
@@ -362,12 +390,12 @@ this:
 
 Here, \textit{class} is an integer number representing the class of the detected object, \textit{x} and
 \textit{y} are floating point numbers in the range of 0-1 marking the \textit{center} coordinates of the
-bounding box, and \textit{w} and \textit{h} are also floating point numbers between 0 and 1 holding the
+bounding box, and \textit{w} and \textit{h} are also floating point numbers between 0 and 1, holding the
 value of the width and height of the bounding box.
 
 We should note that the YOLO format cannot store connection data directly; we can only assume the existence
-of connections based on the positions of bounding boxes. Consequently, data loss would possibly occur
-when using stored data.
+of connections based on the positions of bounding boxes. Consequently, data loss would possibly during this
+export type.
 
 In Section \ref{sec_use_of_generated_data}. we show usage of generated YOLO data.
 
@@ -382,7 +410,7 @@ images \cite{boris_sekachev_2020_4009388}, which uses XML based annotation. We a
 to an image by creating an XML tag for the polyline -- inside the image tag --, then list the coordinates
 as an attribute to the polyline. CVAT is a tool for annotating images, so we can further improve the
 annotation manually, then export it to a more commonly used format -- CVAT supports YOLO, Pascal VOC, COCO,
-TFRecord, and a lot of other formats.
+TFRecord, and numerous other formats.
 
 The advantage of this format is that the connection data is stored directly -- no loss occurs this way.
 The disadvantage is that we have no knowledge of a polyline detection neural network that could make use of
@@ -404,7 +432,7 @@ data.
 
 The disadvantage of using purely generated data is the unreliability of accuracy measurements; since the
 validation data is also generated, Mean Average Precision, Precision, Recall have little meaning. In order
-to reliably use and test such a neural network, manual correction are necessary. However, the amount of time
+to reliably use and test such a neural network, manual correction are necessary. The amount of time
 required for manual corrections is greatly reduced by generating a base annotation; hundreds of annotations
 like the one visible on Figure \ref{fig_generated_data_train}. can now be generated in the matter of seconds,
 greatly extending the available dataset.
@@ -429,13 +457,17 @@ turn is dependent on the size and versatility of the dataset.
 In this paper, we showed a methodology to extend a currently available dataset to contain more images and
 more classes of objects. Namely, the bounding box based dataset on grapevine images formerly contained
 four classes of objects -- nodes, arms, cordons and trunks --, and now the class of internodium is
-algorithmicly added to them. In case we export the dataset not as bounding boxes, but as polylines,
+algorithmically added to them. In case we export the dataset not as bounding boxes, but as polylines,
 the detected canes can be accurately represented.
 
-We used the algorithical extension of the dataset to teach a new neural network, which can now detect
+We used the algorithmic extension of the dataset to teach a new neural network, which can now detect
 internodiums too. Internodium detection can relieve us from the currently necessary white background,
 making the photographing and reconstruction of grapevines much less demanding. Algorithmic dataset
 extension reduces the human working hours required to create a large dataset.
+
+Future plans include the manual corrections of the generated data, the development and testing of an
+internodium box based cane builder algorithm, dataset augmentation with background switching, and
+the connection of canes to the older parts of the grapevine.
 
 \bibliographystyle{PSAIEbib}
 \bibliography{citations}
